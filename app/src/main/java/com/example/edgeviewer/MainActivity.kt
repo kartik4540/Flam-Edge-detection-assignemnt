@@ -10,6 +10,7 @@ import android.widget.TextView
 import com.example.edgeviewer.camera.CameraController
 import com.example.edgeviewer.camera.CameraController.FrameListener
 import com.example.edgeviewer.NativeBridge
+import com.example.edgeviewer.gl.GLView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -18,6 +19,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var textureView: TextureView
     private lateinit var cameraController: CameraController
     private lateinit var fpsText: TextView
+    private lateinit var glView: GLView
+    private var showEdges = true
     private var lastTs = 0L
     private var frames = 0
 
@@ -36,6 +39,11 @@ class MainActivity : ComponentActivity() {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
+        glView = GLView(this)
+        root.addView(glView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
         fpsText = TextView(this).apply {
             text = "FPS: --"
             setTextColor(0xFFFFFFFF.toInt())
@@ -49,6 +57,20 @@ class MainActivity : ComponentActivity() {
         lp.marginStart = 16
         lp.topMargin = 16
         root.addView(fpsText, lp)
+        val toggle = TextView(this).apply {
+            text = "Toggle"
+            setTextColor(0xFFFFFFFF.toInt())
+            setBackgroundColor(0x66333333)
+            setPadding(12,12,12,12)
+            setOnClickListener { showEdges = !showEdges }
+        }
+        val lp2 = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        lp2.marginStart = 16
+        lp2.topMargin = 80
+        root.addView(toggle, lp2)
         // For now, preview the camera directly to TextureView. GLView can be added later.
         setContentView(root)
         ensurePermissions()
@@ -70,8 +92,8 @@ class MainActivity : ComponentActivity() {
     private fun startCamera() {
         cameraController.frameListener = object : FrameListener {
             override fun onFrameRgba(rgba: ByteArray, width: Int, height: Int) {
-                // Send frame through JNI; result returned but not rendered yet
-                NativeBridge.processRgba(rgba, width, height, true)
+                val out = NativeBridge.processRgba(rgba, width, height, showEdges)
+                if (out != null) glView.setGrayFrame(out, width, height)
                 updateFps()
             }
         }
