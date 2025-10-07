@@ -16,7 +16,18 @@
     <div class="panel">
       <h2>Processed Frame Preview</h2>
       <div class="stats">FPS: <span id="fps">--</span> · Resolution: <span id="res">--</span></div>
-      <img id="frame" alt="processed frame" />
+      <div style="display:flex; gap:8px; margin:8px 0 12px;">
+        <button id="start">Start Webcam</button>
+        <button id="stop">Stop</button>
+        <label style="display:flex; align-items:center; gap:6px;">
+          <input type="checkbox" id="gray" checked /> Grayscale
+        </label>
+      </div>
+      <div style="display:grid; gap:8px;">
+        <video id="video" autoplay playsinline muted style="display:none"></video>
+        <canvas id="canvas" width="640" height="480" style="width:100%; height:auto; background:#000"></canvas>
+        <img id="frame" alt="processed frame" />
+      </div>
     </div>
     <script type="module" src="./dist/index.js"></script>
   </body>
