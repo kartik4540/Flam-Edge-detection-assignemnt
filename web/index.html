@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edge Web Viewer</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #0b0b0b; color: #eaeaea; margin: 0; padding: 24px; }
+      .panel { max-width: 720px; margin: 0 auto; background: #151515; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; }
+      .stats { margin: 8px 0 16px; font-size: 14px; color: #bdbdbd; }
+      img { width: 100%; height: auto; background: #000; }
+      code { background: #222; padding: 2px 6px; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h2>Processed Frame Preview</h2>
+      <div class="stats">FPS: <span id="fps">--</span> · Resolution: <span id="res">--</span></div>
+      <img id="frame" alt="processed frame" />
+    </div>
+    <script type="module" src="./dist/index.js"></script>
+  </body>
+  </html>
+
+
