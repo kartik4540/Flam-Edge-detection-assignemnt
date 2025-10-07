@@ -9,12 +9,22 @@ import android.os.HandlerThread
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
+import android.media.ImageReader
+import android.media.Image
+import java.nio.ByteBuffer
 
 class CameraController(private val context: Context) {
     private var cameraDevice: CameraDevice? = null
     private var captureSession: CameraCaptureSession? = null
     private var backgroundThread: HandlerThread? = null
     private var backgroundHandler: Handler? = null
+    private var imageReader: ImageReader? = null
+
+    interface FrameListener {
+        fun onFrameRgba(rgba: ByteArray, width: Int, height: Int)
+    }
+
+    var frameListener: FrameListener? = null
 
     fun start(textureView: TextureView, preferredSize: Size = Size(1280, 720)) {
         startBackgroundThread()
@@ -63,11 +73,31 @@ class CameraController(private val context: Context) {
         val texture = textureView.surfaceTexture ?: return
         texture.setDefaultBufferSize(preferredSize.width, preferredSize.height)
         val surface = Surface(texture)
+        // ImageReader for CPU-accessible frames
+        imageReader?.close()
+        imageReader = ImageReader.newInstance(
+            preferredSize.width,
+            preferredSize.height,
+            android.graphics.ImageFormat.YUV_420_888,
+            3
+        ).also { reader ->
+            reader.setOnImageAvailableListener({ r ->
+                val img = r.acquireLatestImage() ?: return@setOnImageAvailableListener
+                try {
+                    val rgba = yuv420ToRgba(img)
+                    frameListener?.onFrameRgba(rgba, img.width, img.height)
+                } finally {
+                    img.close()
+                }
+            }, backgroundHandler)
+        }
+        val readerSurface = imageReader!!.surface
         val requestBuilder = device.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
             addTarget(surface)
+            addTarget(readerSurface)
             set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
         }
-        device.createCaptureSession(listOf(surface), object : CameraCaptureSession.StateCallback() {
+        device.createCaptureSession(listOf(surface, readerSurface), object : CameraCaptureSession.StateCallback() {
             override fun onConfigured(session: CameraCaptureSession) {
                 captureSession = session
                 session.setRepeatingRequest(requestBuilder.build(), null, backgroundHandler)
@@ -87,6 +117,55 @@ class CameraController(private val context: Context) {
         backgroundThread = null
         backgroundHandler = null
     }
+
+    private fun yuv420ToRgba(image: Image): ByteArray {
+        val width = image.width
+        val height = image.height
+        val yBuffer = image.planes[0].buffer
+        val uBuffer = image.planes[1].buffer
+        val vBuffer = image.planes[2].buffer
+        val yRowStride = image.planes[0].rowStride
+        val uvRowStride = image.planes[1].rowStride
+        val uvPixelStride = image.planes[1].pixelStride
+
+        val out = ByteArray(width * height * 4)
+        var outIdx = 0
+        val yBytes = yBuffer.toByteArray()
+        val uBytes = uBuffer.toByteArray()
+        val vBytes = vBuffer.toByteArray()
+
+        for (j in 0 until height) {
+            val pY = j * yRowStride
+            val pUV = (j / 2) * uvRowStride
+            for (i in 0 until width) {
+                val y = 0xFF and yBytes[pY + i].toInt()
+                val uvIndex = pUV + (i / 2) * uvPixelStride
+                val u = 0xFF and uBytes[uvIndex].toInt()
+                val v = 0xFF and vBytes[uvIndex].toInt()
+                val c = y - 16
+                val d = u - 128
+                val e = v - 128
+                var r = (298 * c + 409 * e + 128) shr 8
+                var g = (298 * c - 100 * d - 208 * e + 128) shr 8
+                var b = (298 * c + 516 * d + 128) shr 8
+                if (r < 0) r = 0 else if (r > 255) r = 255
+                if (g < 0) g = 0 else if (g > 255) g = 255
+                if (b < 0) b = 0 else if (b > 255) b = 255
+                out[outIdx++] = r.toByte()
+                out[outIdx++] = g.toByte()
+                out[outIdx++] = b.toByte()
+                out[outIdx++] = 0xFF.toByte()
+            }
+        }
+        return out
+    }
+}
+
+private fun ByteBuffer.toByteArray(): ByteArray {
+    val bytes = ByteArray(remaining())
+    get(bytes)
+    rewind()
+    return bytes
 }
 
 
