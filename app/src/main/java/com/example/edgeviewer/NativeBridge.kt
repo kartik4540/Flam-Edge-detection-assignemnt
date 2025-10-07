@@ -10,6 +10,7 @@ object NativeBridge {
     }
 
     external fun stringFromJNI(): String
+    external fun processRgba(inputRgba: ByteArray, width: Int, height: Int, useCanny: Boolean): ByteArray?
 }
 
 
