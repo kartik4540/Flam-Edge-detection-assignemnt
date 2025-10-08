@@ -142,6 +142,8 @@ async function setupWebcam() {
   const startBtn = document.getElementById('start') as HTMLButtonElement;
   const stopBtn = document.getElementById('stop') as HTMLButtonElement;
   const saveBtn = document.getElementById('save') as HTMLButtonElement;
+  const uploadBtn = document.getElementById('upload') as HTMLButtonElement;
+  const fileInput = document.getElementById('fileInput') as HTMLInputElement;
   const grayChk = document.getElementById('gray') as HTMLInputElement;
   const edgesChk = document.getElementById('edges') as HTMLInputElement;
   const fps = document.getElementById('fps') as HTMLSpanElement;
@@ -160,6 +162,7 @@ async function setupWebcam() {
   let raf = 0;
   let last = performance.now();
   let frames = 0;
+  let isUploadMode = false;
 
   function draw() {
     if (!video.videoWidth || !video.videoHeight) {
@@ -197,6 +200,52 @@ async function setupWebcam() {
     raf = requestAnimationFrame(draw);
   }
 
+  function processUploadedImage(imageFile: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Set canvas size to image size
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw the uploaded image
+        ctx.drawImage(img, 0, 0);
+        
+        // Apply processing if enabled
+        if (grayChk.checked || edgesChk.checked) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          
+          if (edgesChk.checked) {
+            const edgeData = sobelEdgeDetection(imageData);
+            ctx.putImageData(edgeData, 0, 0);
+          } else if (grayChk.checked) {
+            const a = imageData.data;
+            for (let i = 0; i < a.length; i += 4) {
+              const y = 0.299 * a[i] + 0.587 * a[i+1] + 0.114 * a[i+2];
+              a[i] = a[i+1] = a[i+2] = y;
+            }
+            ctx.putImageData(imageData, 0, 0);
+          }
+        }
+        
+        // Update stats
+        res.textContent = `${canvas.width}x${canvas.height}`;
+        fps.textContent = 'Static';
+        msg.textContent = 'Image processed';
+        
+        // Hide welcome message
+        const welcomeImg = document.getElementById('frame') as HTMLImageElement;
+        welcomeImg.style.display = 'none';
+        
+        // Enable save button
+        saveBtn.disabled = false;
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(imageFile);
+  }
+
   startBtn.onclick = async () => {
     if (stream) return;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -219,6 +268,8 @@ async function setupWebcam() {
         startBtn.disabled = true;
         stopBtn.disabled = false;
         saveBtn.disabled = false;
+        uploadBtn.disabled = true;
+        isUploadMode = false;
       };
     } catch (e: any) {
       console.error('getUserMedia error', e);
@@ -238,10 +289,65 @@ async function setupWebcam() {
     startBtn.disabled = false;
     stopBtn.disabled = true;
     saveBtn.disabled = true;
+    uploadBtn.disabled = false;
+    isUploadMode = false;
+  };
+
+  uploadBtn.onclick = () => {
+    fileInput.click();
+  };
+
+  fileInput.onchange = (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      processUploadedImage(file);
+      isUploadMode = true;
+      // Disable camera controls when in upload mode
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+      uploadBtn.disabled = true;
+    }
+  };
+
+  // Add event listeners for processing toggles
+  grayChk.onchange = () => {
+    if (isUploadMode && canvas.width > 0 && canvas.height > 0) {
+      // Re-process the uploaded image
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      if (edgesChk.checked) {
+        const edgeData = sobelEdgeDetection(imageData);
+        ctx.putImageData(edgeData, 0, 0);
+      } else if (grayChk.checked) {
+        const a = imageData.data;
+        for (let i = 0; i < a.length; i += 4) {
+          const y = 0.299 * a[i] + 0.587 * a[i+1] + 0.114 * a[i+2];
+          a[i] = a[i+1] = a[i+2] = y;
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+    }
+  };
+
+  edgesChk.onchange = () => {
+    if (isUploadMode && canvas.width > 0 && canvas.height > 0) {
+      // Re-process the uploaded image
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      if (edgesChk.checked) {
+        const edgeData = sobelEdgeDetection(imageData);
+        ctx.putImageData(edgeData, 0, 0);
+      } else if (grayChk.checked) {
+        const a = imageData.data;
+        for (let i = 0; i < a.length; i += 4) {
+          const y = 0.299 * a[i] + 0.587 * a[i+1] + 0.114 * a[i+2];
+          a[i] = a[i+1] = a[i+2] = y;
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+    }
   };
 
   saveBtn.onclick = () => {
-    if (!stream || canvas.width === 0 || canvas.height === 0) return;
+    if (canvas.width === 0 || canvas.height === 0) return;
     
     // Create a temporary canvas to capture the current frame
     const tempCanvas = document.createElement('canvas');
@@ -259,7 +365,8 @@ async function setupWebcam() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `edge-detection-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+      const prefix = isUploadMode ? 'uploaded-image' : 'edge-detection';
+      a.download = `${prefix}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -268,6 +375,7 @@ async function setupWebcam() {
       msg.textContent = 'Frame saved!';
       setTimeout(() => {
         if (stream) msg.textContent = 'Camera started';
+        else if (isUploadMode) msg.textContent = 'Image processed';
         else msg.textContent = 'Ready';
       }, 2000);
     }, 'image/png');
