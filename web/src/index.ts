@@ -15,6 +15,50 @@ function makeCheckerPng(size = 256, cell = 16): string {
   return canvas.toDataURL('image/png');
 }
 
+function sobelEdgeDetection(imageData: ImageData): ImageData {
+  const { data, width, height } = imageData;
+  const result = new ImageData(width, height);
+  const resultData = result.data;
+  
+  // Convert to grayscale first
+  const gray = new Uint8Array(width * height);
+  for (let i = 0; i < data.length; i += 4) {
+    const y = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+    gray[i/4] = y;
+  }
+  
+  // Sobel kernels
+  const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+  const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+  
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      let gx = 0, gy = 0;
+      
+      // Apply Sobel kernels
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const idx = (y + ky) * width + (x + kx);
+          const kernelIdx = (ky + 1) * 3 + (kx + 1);
+          gx += gray[idx] * sobelX[kernelIdx];
+          gy += gray[idx] * sobelY[kernelIdx];
+        }
+      }
+      
+      const magnitude = Math.sqrt(gx * gx + gy * gy);
+      const edge = Math.min(255, magnitude);
+      
+      const resultIdx = (y * width + x) * 4;
+      resultData[resultIdx] = edge;
+      resultData[resultIdx + 1] = edge;
+      resultData[resultIdx + 2] = edge;
+      resultData[resultIdx + 3] = 255;
+    }
+  }
+  
+  return result;
+}
+
 async function setupWebcam() {
   const video = document.getElementById('video') as HTMLVideoElement;
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -22,9 +66,11 @@ async function setupWebcam() {
   const startBtn = document.getElementById('start') as HTMLButtonElement;
   const stopBtn = document.getElementById('stop') as HTMLButtonElement;
   const grayChk = document.getElementById('gray') as HTMLInputElement;
+  const edgesChk = document.getElementById('edges') as HTMLInputElement;
   const fps = document.getElementById('fps') as HTMLSpanElement;
   const res = document.getElementById('res') as HTMLSpanElement;
   const img = document.getElementById('frame') as HTMLImageElement;
+  const msg = document.getElementById('msg') as HTMLSpanElement;
 
   // show a default sample image
   img.src = makeCheckerPng(256, 16);
@@ -46,14 +92,21 @@ async function setupWebcam() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    if (grayChk.checked) {
+    
+    if (grayChk.checked || edgesChk.checked) {
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const a = imageData.data;
-      for (let i = 0; i < a.length; i += 4) {
-        const y = 0.299 * a[i] + 0.587 * a[i+1] + 0.114 * a[i+2];
-        a[i] = a[i+1] = a[i+2] = y;
+      
+      if (edgesChk.checked) {
+        const edgeData = sobelEdgeDetection(imageData);
+        ctx.putImageData(edgeData, 0, 0);
+      } else if (grayChk.checked) {
+        const a = imageData.data;
+        for (let i = 0; i < a.length; i += 4) {
+          const y = 0.299 * a[i] + 0.587 * a[i+1] + 0.114 * a[i+2];
+          a[i] = a[i+1] = a[i+2] = y;
+        }
+        ctx.putImageData(imageData, 0, 0);
       }
-      ctx.putImageData(imageData, 0, 0);
     }
 
     frames++;
@@ -69,14 +122,27 @@ async function setupWebcam() {
 
   startBtn.onclick = async () => {
     if (stream) return;
-    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
-    video.srcObject = stream;
-    video.onloadedmetadata = () => {
-      video.play();
-      cancelAnimationFrame(raf);
-      last = performance.now(); frames = 0;
-      raf = requestAnimationFrame(draw);
-    };
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      msg.textContent = 'getUserMedia not supported in this browser.';
+      return;
+    }
+    try {
+      msg.textContent = 'Requesting camera...';
+      stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+      msg.textContent = 'Camera started';
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play();
+        cancelAnimationFrame(raf);
+        last = performance.now(); frames = 0;
+        raf = requestAnimationFrame(draw);
+        // Hide sample image when camera starts
+        img.style.display = 'none';
+      };
+    } catch (e: any) {
+      console.error('getUserMedia error', e);
+      msg.textContent = `Error: ${e.name || ''} ${e.message || e}`;
+    }
   };
 
   stopBtn.onclick = () => {
@@ -84,11 +150,12 @@ async function setupWebcam() {
     stream.getTracks().forEach(t => t.stop());
     stream = null;
     cancelAnimationFrame(raf);
+    msg.textContent = 'Camera stopped';
+    // Show sample image when camera stops
+    img.style.display = 'block';
   };
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   setupWebcam();
 });
-
-

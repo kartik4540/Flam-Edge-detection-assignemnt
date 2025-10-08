@@ -3,30 +3,66 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Edge Web Viewer</title>
+    <title>Real-Time Edge Detection Viewer</title>
     <style>
-      body { font-family: system-ui, sans-serif; background: #0b0b0b; color: #eaeaea; margin: 0; padding: 24px; }
-      .panel { max-width: 720px; margin: 0 auto; background: #151515; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; }
-      .stats { margin: 8px 0 16px; font-size: 14px; color: #bdbdbd; }
-      img { width: 100%; height: auto; background: #000; }
-      code { background: #222; padding: 2px 6px; border-radius: 4px; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%); color: #eaeaea; margin: 0; padding: 24px; min-height: 100vh; }
+      .container { max-width: 800px; margin: 0 auto; }
+      .header { text-align: center; margin-bottom: 32px; }
+      .header h1 { font-size: 2.5rem; font-weight: 300; margin: 0; background: linear-gradient(45deg, #00ff88, #0088ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      .header p { color: #888; margin: 8px 0 0; font-size: 1.1rem; }
+      .panel { background: rgba(21, 21, 21, 0.8); border: 1px solid #333; border-radius: 12px; padding: 24px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+      .controls { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; align-items: center; }
+      .btn { background: linear-gradient(45deg, #00ff88, #0088ff); border: none; color: white; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+      .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,255,136,0.3); }
+      .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+      .btn.secondary { background: #333; }
+      .btn.secondary:hover { background: #444; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+      .stats { margin: 16px 0; font-size: 14px; color: #bdbdbd; display: flex; gap: 16px; flex-wrap: wrap; }
+      .stat { background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 6px; }
+      .video-container { position: relative; margin: 16px 0; border-radius: 8px; overflow: hidden; background: #000; }
+      video, canvas { width: 100%; height: auto; display: block; }
+      .sample-frame { margin-top: 16px; border-radius: 8px; overflow: hidden; }
+      .footer { text-align: center; margin-top: 32px; color: #666; font-size: 0.9rem; }
+      .footer a { color: #00ff88; text-decoration: none; }
+      .footer a:hover { text-decoration: underline; }
+      .checkbox-container { display: flex; align-items: center; gap: 8px; color: #eaeaea; }
+      .checkbox-container input[type="checkbox"] { width: 18px; height: 18px; accent-color: #00ff88; }
     </style>
   </head>
   <body>
-    <div class="panel">
-      <h2>Processed Frame Preview</h2>
-      <div class="stats">FPS: <span id="fps">--</span> · Resolution: <span id="res">--</span></div>
-      <div style="display:flex; gap:8px; margin:8px 0 12px;">
-        <button id="start">Start Webcam</button>
-        <button id="stop">Stop</button>
-        <label style="display:flex; align-items:center; gap:6px;">
-          <input type="checkbox" id="gray" checked /> Grayscale
-        </label>
+    <div class="container">
+      <div class="header">
+        <h1>Real-Time Edge Detection</h1>
+        <p>Live camera processing with grayscale and edge detection</p>
       </div>
-      <div style="display:grid; gap:8px;">
-        <video id="video" autoplay playsinline muted style="display:none"></video>
-        <canvas id="canvas" width="640" height="480" style="width:100%; height:auto; background:#000"></canvas>
-        <img id="frame" alt="processed frame" />
+      <div class="panel">
+        <div class="stats">
+          <div class="stat">FPS: <span id="fps">--</span></div>
+          <div class="stat">Resolution: <span id="res">--</span></div>
+          <div class="stat">Status: <span id="msg">Ready</span></div>
+        </div>
+        <div class="controls">
+          <button id="start" class="btn">Start Camera</button>
+          <button id="stop" class="btn secondary" disabled>Stop</button>
+          <div class="checkbox-container">
+            <input type="checkbox" id="gray" checked />
+            <label for="gray">Grayscale</label>
+          </div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="edges" />
+            <label for="edges">Edge Detection</label>
+          </div>
+        </div>
+        <div class="video-container">
+          <video id="video" autoplay playsinline muted style="display:none"></video>
+          <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+        <div class="sample-frame">
+          <img id="frame" alt="sample processed frame" />
+        </div>
+      </div>
+      <div class="footer">
+        <p>Created by <a href="https://github.com/kartikmittal" target="_blank">Kartik Mittal</a></p>
       </div>
     </div>
     <script type="module" src="./dist/index.js"></script>
