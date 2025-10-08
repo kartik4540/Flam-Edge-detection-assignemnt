@@ -1,39 +1,39 @@
 function createWelcomeMessage(): string {
   const canvas = document.createElement('canvas');
-  canvas.width = 800; canvas.height = 800; // Increased height for mobile
+  canvas.width = 800; canvas.height = 900; // Even more height
   const ctx = canvas.getContext('2d')!;
   
   // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, 800, 800);
+  const gradient = ctx.createLinearGradient(0, 0, 800, 900);
   gradient.addColorStop(0, '#0a0a0a');
   gradient.addColorStop(1, '#1a1a2e');
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 800, 800);
+  ctx.fillRect(0, 0, 800, 900);
   
-  // Title - smaller font for mobile
+  // Title - much smaller for mobile
   ctx.fillStyle = '#00ff88';
-  ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Real-Time Edge Detection', 400, 60);
+  ctx.fillText('Real-Time Edge Detection', 400, 50);
   
-  // Subtitle - smaller font
+  // Subtitle - smaller
   ctx.fillStyle = '#0088ff';
-  ctx.font = '18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText('Android + OpenCV + OpenGL + Web', 400, 90);
+  ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('Android + OpenCV + OpenGL + Web', 400, 75);
   
   // Internship info
   ctx.fillStyle = '#ffffff';
-  ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText('R&D Intern Assessment Project', 400, 120);
+  ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('R&D Intern Assessment Project', 400, 100);
   
-  // Toolkit section - single column for mobile
+  // Toolkit section
   ctx.fillStyle = '#00ff88';
-  ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('🛠️ Toolkit Used:', 50, 160);
+  ctx.fillText('🛠️ Toolkit Used:', 50, 130);
   
   ctx.fillStyle = '#eaeaea';
-  ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   const toolkit = [
     '• Android SDK (Kotlin/Java)',
     '• Camera2 API + TextureView',
@@ -43,16 +43,16 @@ function createWelcomeMessage(): string {
     '• CMake + NDK'
   ];
   toolkit.forEach((item, i) => {
-    ctx.fillText(item, 70, 185 + i * 20);
+    ctx.fillText(item, 70, 150 + i * 18);
   });
   
   // Workflow section
   ctx.fillStyle = '#00ff88';
-  ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText('🔄 Workflow:', 50, 320);
+  ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('🔄 Workflow:', 50, 270);
   
   ctx.fillStyle = '#eaeaea';
-  ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   const workflow = [
     '1. Camera2 captures frames → YUV',
     '2. JNI sends RGBA to OpenCV C++',
@@ -61,16 +61,16 @@ function createWelcomeMessage(): string {
     '5. Web viewer shows laptop camera'
   ];
   workflow.forEach((item, i) => {
-    ctx.fillText(item, 70, 345 + i * 20);
+    ctx.fillText(item, 70, 290 + i * 18);
   });
   
   // Usage instructions
   ctx.fillStyle = '#00ff88';
-  ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText('📱 How to Use:', 50, 460);
+  ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('📱 How to Use:', 50, 390);
   
   ctx.fillStyle = '#eaeaea';
-  ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   const usage = [
     '• Click "Start Camera" to begin',
     '• Toggle "Grayscale" for B&W',
@@ -79,14 +79,14 @@ function createWelcomeMessage(): string {
     '• Click "Stop" to end session'
   ];
   usage.forEach((item, i) => {
-    ctx.fillText(item, 70, 485 + i * 20);
+    ctx.fillText(item, 70, 410 + i * 18);
   });
   
   // Footer
   ctx.fillStyle = '#666';
-  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Click "Start Camera" to begin real-time processing', 400, 620);
+  ctx.fillText('Click "Start Camera" to begin', 400, 520);
   
   return canvas.toDataURL('image/png');
 }
