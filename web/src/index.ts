@@ -271,7 +271,29 @@ async function setupWebcam() {
     }
     try {
       msg.textContent = 'Requesting camera...';
-      stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+      // Prefer back camera on phones; specific resolution if available
+      const preferred: MediaStreamConstraints = {
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      };
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(preferred);
+      } catch (err: any) {
+        // If no matching device (NotFoundError), fall back to any available camera
+        if (err && err.name === 'NotFoundError') {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } else {
+          throw err;
+        }
+      }
+
+      // Optional: log available video inputs to help diagnose
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cams = devices.filter(d => d.kind === 'videoinput').map(d => ({ label: d.label, id: d.deviceId }));
+        console.table(cams);
+      } catch {}
+
       msg.textContent = 'Camera started';
       video.srcObject = stream;
       video.onloadedmetadata = () => {
