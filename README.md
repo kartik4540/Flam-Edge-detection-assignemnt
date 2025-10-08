@@ -248,5 +248,10 @@ This project is created for educational purposes as part of an R&D Intern Assess
 - Project: Real-Time Edge Detection System
 
 ---
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/173f58a1-416e-467b-8898-79c364903c53" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/8f1cd921-88da-459d-a751-95b90b10fd20" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/8580bfdd-a8bc-48fb-a81d-abbf5d3872a0" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/02df6f77-6edb-4889-bf95-b37783fd55cb" />
+
 
 *This project demonstrates proficiency in Android native development, computer vision, graphics programming, and web technologies.*
