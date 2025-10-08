@@ -3,6 +3,9 @@ function createWelcomeMessage(): string {
   canvas.width = 800; canvas.height = 1000; // Increased height for all content
   const ctx = canvas.getContext('2d')!;
   
+  // Render text with a top baseline to prevent clipping on small screens
+  ctx.textBaseline = 'top';
+  
   // Background gradient
   const gradient = ctx.createLinearGradient(0, 0, 800, 1000);
   gradient.addColorStop(0, '#0a0a0a');
