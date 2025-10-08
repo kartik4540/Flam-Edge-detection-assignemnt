@@ -65,6 +65,7 @@ async function setupWebcam() {
   const ctx = canvas.getContext('2d')!;
   const startBtn = document.getElementById('start') as HTMLButtonElement;
   const stopBtn = document.getElementById('stop') as HTMLButtonElement;
+  const saveBtn = document.getElementById('save') as HTMLButtonElement;
   const grayChk = document.getElementById('gray') as HTMLInputElement;
   const edgesChk = document.getElementById('edges') as HTMLInputElement;
   const fps = document.getElementById('fps') as HTMLSpanElement;
@@ -138,6 +139,10 @@ async function setupWebcam() {
         raf = requestAnimationFrame(draw);
         // Hide sample image when camera starts
         img.style.display = 'none';
+        // Enable stop and save buttons
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        saveBtn.disabled = false;
       };
     } catch (e: any) {
       console.error('getUserMedia error', e);
@@ -153,6 +158,43 @@ async function setupWebcam() {
     msg.textContent = 'Camera stopped';
     // Show sample image when camera stops
     img.style.display = 'block';
+    // Enable start button, disable stop and save buttons
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    saveBtn.disabled = true;
+  };
+
+  saveBtn.onclick = () => {
+    if (!stream || canvas.width === 0 || canvas.height === 0) return;
+    
+    // Create a temporary canvas to capture the current frame
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d')!;
+    
+    // Draw the current processed frame
+    tempCtx.drawImage(canvas, 0, 0);
+    
+    // Convert to blob and download
+    tempCanvas.toBlob((blob) => {
+      if (!blob) return;
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `edge-detection-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      msg.textContent = 'Frame saved!';
+      setTimeout(() => {
+        if (stream) msg.textContent = 'Camera started';
+        else msg.textContent = 'Ready';
+      }, 2000);
+    }, 'image/png');
   };
 }
 
